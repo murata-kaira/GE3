@@ -17,9 +17,19 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wPARAM, LPARAM lParam);
 
 #include"externals/DirectXTex/DirectXTex.h"
-
 #include<fstream>
 #include<sstream>
+#include"Input.h"
+
+
+
+//DirectInput
+#define DIRECTINPUT_VERSION 0x0800
+#include<dinput.h>
+
+#pragma comment(lib,"dinput8.lib")
+
+
 
 struct Vector4 {
 	float x;
@@ -1033,6 +1043,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	*/
 
 
+	int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
+
+
+	Input* input = nullptr;
+
+	input = new Input();
+	input->Initialize(wc.hInstance, hwnd);
+
+
+
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
 
 	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
@@ -1183,8 +1203,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
 
 
-
-
+	BYTE prekey[256] = {};
 
 	MSG msg{};
 
@@ -1196,16 +1215,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		else {
 
+
+			input->Update();
+
+
+			//memcpy(prekey, key, 256);
+
+
+
+
 			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
 			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
 
-			
+
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
+
+		/*	if (key[DIK_SPACE] && !prekey[DIK_SPACE]) {
+				OutputDebugStringA("Press Space\n");
+			}
+			*/
+			
+
 
 
 			ImGui::ShowDemoWindow();
@@ -1290,7 +1325,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			//commandList->DrawInstanced(6, 1, 0, 0);
 			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-			
+
 
 
 
@@ -1331,10 +1366,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			hr = commandList->Reset(commandAllocator, nullptr);
 			assert(SUCCEEDED(hr));
 
+
+/*		if (key[DIK_ESCAPE]) {
+				OutputDebugStringA("Game Loop End\n");
+			}
+			
+			*/
+
 		}
+
 	}
 
-	
+
 
 
 	OutputDebugStringA("Hello,DirectX!\n");
@@ -1404,6 +1447,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	CoUninitialize();
 
 
-	return 0;
 
+	delete input;
+
+
+	return 0;
 }
