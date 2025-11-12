@@ -17,7 +17,7 @@ void Input::Initialize(HINSTANCE hInstance, HWND hwnd)
 
 	result = keyboard->SetDataFormat(&c_dfDIKeyboard);
 	assert(SUCCEEDED(result));
-	 
+
 	result = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(result));
 
@@ -52,10 +52,9 @@ bool Input::PushKey(BYTE keyNumber)
 bool Input::TriggerKey(BYTE keyNumber)
 {
 
-	if (key[DIK_0]) {
-		OutputDebugStringA("Game Loop End\n");
+	if (key[keyNumber] && !keyPre[keyNumber]) {
+		return true;
 	}
-
 
 	return false;
 }

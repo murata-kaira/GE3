@@ -1,3 +1,4 @@
+
 #pragma once
 #include<Windows.h>
 #include<wrl.h>
@@ -11,8 +12,10 @@ public:
 
 	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
+	bool PushKey(BYTE keyNumber);
+	bool TriggerKey(BYTE keyNumber);
 
-	void Initialize(HINSTANCE hInstance,HWND hwnd);
+	void Initialize(HINSTANCE hInstance, HWND hwnd);
 
 	void Update();
 
@@ -23,9 +26,6 @@ private:
 
 	ComPtr<IDirectInputDevice8> keyboard;
 
-	bool PushKey(BYTE keyNumber);
-
-	bool TriggerKey(BYTE keyNumber);
 
 	BYTE keyPre[256] = {};
 

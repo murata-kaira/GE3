@@ -1218,6 +1218,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			input->Update();
 
+			if (input->TriggerKey(DIK_0)) {
+				OutputDebugStringA(" Hit 0\n");
+			}
+
+
 
 			//memcpy(prekey, key, 256);
 
@@ -1235,11 +1240,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-		/*	if (key[DIK_SPACE] && !prekey[DIK_SPACE]) {
-				OutputDebugStringA("Press Space\n");
-			}
-			*/
-			
+			/*	if (key[DIK_SPACE] && !prekey[DIK_SPACE]) {
+					OutputDebugStringA("Press Space\n");
+				}
+				*/
+
 
 
 
@@ -1367,11 +1372,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			assert(SUCCEEDED(hr));
 
 
-/*		if (key[DIK_ESCAPE]) {
-				OutputDebugStringA("Game Loop End\n");
-			}
-			
-			*/
+			/*		if (key[DIK_ESCAPE]) {
+							OutputDebugStringA("Game Loop End\n");
+						}
+
+						*/
 
 		}
 
