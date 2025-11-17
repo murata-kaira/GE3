@@ -6,7 +6,7 @@
 
 void Input::Initialize(WinApp* winApp)
 {
-	this->winApp = winApp;
+	this->winApp_ = winApp;
 
 	HRESULT result;
 

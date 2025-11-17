@@ -31,7 +31,7 @@ private:
 
 	BYTE key[256] = {};
 
-	WinApp* winApp = nullptr;
+	WinApp* winApp_ = nullptr;
 
 
 
