@@ -619,7 +619,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 #endif
 
-	
+
 	//初期化
 
 
@@ -1145,169 +1145,169 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-			input->Update();
+		input->Update();
 
-			if (input->TriggerKey(DIK_0)) {
-				OutputDebugStringA(" Hit 0\n");
+		if (input->TriggerKey(DIK_0)) {
+			OutputDebugStringA(" Hit 0\n");
+		}
+
+
+
+		//memcpy(prekey, key, 256);
+
+
+
+
+		Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+		Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+		Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
+		Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+		*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+
+
+		ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		/*	if (key[DIK_SPACE] && !prekey[DIK_SPACE]) {
+				OutputDebugStringA("Press Space\n");
 			}
+			*/
 
 
 
-			//memcpy(prekey, key, 256);
 
+		ImGui::ShowDemoWindow();
+		ImGui::Begin("Settings");
+		ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
+		ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
+		ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
+		ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
 
+		ImGui::End();
 
+		ImGui::Render();
 
-			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+		//transform.rotate.y += 0.03f;
+		//	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+		//	*wvpData = worldMatrix;
+		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+		*wvpData = worldViewProjectionMatrix;
 
 
-			ImGui_ImplDX12_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
 
-			/*	if (key[DIK_SPACE] && !prekey[DIK_SPACE]) {
-					OutputDebugStringA("Press Space\n");
-				}
-				*/
 
+		UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
+		D3D12_RESOURCE_BARRIER barrier{};
 
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 
-			ImGui::ShowDemoWindow();
-			ImGui::Begin("Settings");
-			ImGui::ColorEdit4("material", &materialData->x, ImGuiColorEditFlags_AlphaPreview);
-			ImGui::DragFloat("rotate.y", &transform.rotate.y, 0.1f);
-			ImGui::DragFloat3("transform", &transform.translate.x, 0.1f);
-			ImGui::DragFloat2("Sprite transform", &transformSprite.translate.x, 1.0f);
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 
-			ImGui::End();
+		barrier.Transition.pResource = swapChainResources[backBufferIndex];
 
-			ImGui::Render();
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 
-			//transform.rotate.y += 0.03f;
-			//	Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-			//	*wvpData = worldMatrix;
-			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-			Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-			Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-			*wvpData = worldViewProjectionMatrix;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
+		commandList->ResourceBarrier(1, &barrier);
 
+		commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
 
+		float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
+		commandList->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
 
-			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, &dsvHandle);
 
-			D3D12_RESOURCE_BARRIER barrier{};
+		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
+		commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 
-			barrier.Transition.pResource = swapChainResources[backBufferIndex];
+		commandList->RSSetViewports(1, &viewport);
+		commandList->RSSetScissorRects(1, &scissorRect);
 
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		commandList->SetGraphicsRootSignature(rootSignature);
+		commandList->SetPipelineState(graphicsPipelineState);
+		commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 
-			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			commandList->ResourceBarrier(1, &barrier);
+		commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 
-			commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
+		commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 
-			float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
-			commandList->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
+		commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-			commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, &dsvHandle);
+		commandList->DrawInstanced(6, 1, 0, 0);
+		commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
-			commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-			ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
-			commandList->SetDescriptorHeaps(1, descriptorHeaps);
+		//スプライト
+		commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 
+		commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 
-			commandList->RSSetViewports(1, &viewport);
-			commandList->RSSetScissorRects(1, &scissorRect);
+		commandList->IASetIndexBuffer(&indexBufferViewSprite);
 
-			commandList->SetGraphicsRootSignature(rootSignature);
-			commandList->SetPipelineState(graphicsPipelineState);
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+		//commandList->DrawInstanced(6, 1, 0, 0);
+		commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
-			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 
-			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
-			commandList->DrawInstanced(6, 1, 0, 0);
-			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
+		commandList->ResourceBarrier(1, &barrier);
 
-			//スプライト
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 
-			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 
-			commandList->IASetIndexBuffer(&indexBufferViewSprite);
+		hr = commandList->Close();
+		assert(SUCCEEDED(hr));
 
-			//commandList->DrawInstanced(6, 1, 0, 0);
-			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+		ID3D12CommandList* commandLists[] = { commandList };
+		commandQueue->ExecuteCommandLists(1, commandLists);
 
 
 
+		swapChain->Present(1, 0);
 
-			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+		fenceValue++;
 
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		commandQueue->Signal(fence, fenceValue);
 
-			commandList->ResourceBarrier(1, &barrier);
+		if (fence->GetCompletedValue() < fenceValue) {
 
+			fence->SetEventOnCompletion(fenceValue, fenceEvent);
 
+			WaitForSingleObject(fenceEvent, INFINITE);
 
-			hr = commandList->Close();
-			assert(SUCCEEDED(hr));
 
-			ID3D12CommandList* commandLists[] = { commandList };
-			commandQueue->ExecuteCommandLists(1, commandLists);
+		}
 
+		hr = commandAllocator->Reset();
+		assert(SUCCEEDED(hr));
+		hr = commandList->Reset(commandAllocator, nullptr);
+		assert(SUCCEEDED(hr));
 
 
-			swapChain->Present(1, 0);
+		/*		if (key[DIK_ESCAPE]) {
+						OutputDebugStringA("Game Loop End\n");
+					}
 
-			fenceValue++;
+					*/
 
-			commandQueue->Signal(fence, fenceValue);
 
-			if (fence->GetCompletedValue() < fenceValue) {
-
-				fence->SetEventOnCompletion(fenceValue, fenceEvent);
-
-				WaitForSingleObject(fenceEvent, INFINITE);
-
-
-			}
-
-			hr = commandAllocator->Reset();
-			assert(SUCCEEDED(hr));
-			hr = commandList->Reset(commandAllocator, nullptr);
-			assert(SUCCEEDED(hr));
-
-
-			/*		if (key[DIK_ESCAPE]) {
-							OutputDebugStringA("Game Loop End\n");
-						}
-
-						*/
-
-	
 	}
 
 
