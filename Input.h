@@ -1,9 +1,9 @@
-
 #pragma once
 #include<Windows.h>
 #include<wrl.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
+#include"WinApp.h"
 
 
 class Input {
@@ -15,7 +15,7 @@ public:
 	bool PushKey(BYTE keyNumber);
 	bool TriggerKey(BYTE keyNumber);
 
-	void Initialize(HINSTANCE hInstance, HWND hwnd);
+	void Initialize(WinApp* winApp);
 
 	void Update();
 
@@ -30,6 +30,8 @@ private:
 	BYTE keyPre[256] = {};
 
 	BYTE key[256] = {};
+
+	WinApp* winApp = nullptr;
 
 
 
