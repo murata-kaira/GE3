@@ -1376,8 +1376,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	delete input;
 
-	CloseWindow(winApp->GetHwnd());
-	CoUninitialize();
 	winApp->Finalize();
 
 	delete winApp;
