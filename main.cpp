@@ -20,10 +20,10 @@
 #include <xaudio2.h>
 #define DIRECTINPUT_VERSION   0x0800 
 #include <dinput.h>
-#include "Input.h"
-#include "WinApp.h"
-#include "DirectXCommon.h"
-#include "StringUtility.h"
+#include "Engine/io/Input.h"
+#include "Engine/base/WinApp.h"
+#include "Engine/base/DirectXCommon.h"
+#include "Engine/base/StringUtility.h"
 
 #include "Vector2.h"
 #include "Vector4.h"
