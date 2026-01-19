@@ -61,11 +61,11 @@ public://メンバ関数
 	void PostDraw();
 
 	//// --- Getter ---
-	ID3D12Device* GetDevice()
+	ID3D12Device* GetDevice() const
 	{
 		return device.Get();
 	}
-	ID3D12GraphicsCommandList* GetCommandList()
+	ID3D12GraphicsCommandList* GetCommandList() const
 	{
 		return commandList.Get();
 	}
@@ -82,7 +82,7 @@ public://メンバ関数
 
 	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextureResource(const DirectX::TexMetadata& metadata);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource>UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages);
+	Microsoft::WRL::ComPtr<ID3D12Resource>UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages);
 
 	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 

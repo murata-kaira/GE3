@@ -477,16 +477,15 @@ void DirectXCommon::PostDraw()
 	fenceValue++;
 
 	//GPUがここまでたどり着いた時、Fanseの値を指定した値に代入するようにsignalを送る
-	commandQueue->Signal(fence.Get(), fenceValue);
+	commandQueue->Signal(fence.Get(), ++fenceValue);
 
-	//Fanceの値が指定したSignal値たどり着いているか確認する
-	//GetCompletedValueの初期値はFance作成時に渡した初期値
-	if (fence->GetCompletedValue() < fenceValue)
+
+	if (fence->GetCompletedValue() != fenceValue)
 	{
-		//指定したSignal値までGPUがたどり着いていない場合、たどり着くまで待つように、イベントを設定する
+		HANDLE fenceEvent = CreateEvent(nullptr, false, false, nullptr);
 		fence->SetEventOnCompletion(fenceValue, fenceEvent);
-		//イベントが発火するまで待つ
 		WaitForSingleObject(fenceEvent, INFINITE);
+		CloseHandle(fenceEvent);
 	}
 
 	//次のフレーム用のコマンドリストを準備
@@ -566,8 +565,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_t sizeInBytes)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> bufferResource = nullptr;
-	// HRESULTはWindows系のエラーコードであり、
-	// 関数が成功したかどうかをSUCCEDEDマクロで判定できる
+	
 	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
 	// 頂点リソース用のヒープの設定
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
