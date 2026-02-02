@@ -48,7 +48,7 @@ jobs:
           \( \( "${NAME_CONDITIONS[@]}" \) -a -type f -print \) \)
           
           # 検出結果があればエラーとして出力し、失敗させる
-          if [ -n "$UNWANTED_LIST"]; then
+          if [ -n "$UNWANTED_LIST" ]; then
             echo "::error::不要なファイルまたはディレクトリが見つかりました！"
             echo "$UNWANTED_LIST"
             exit 1
