@@ -2,9 +2,9 @@
 name: CheckUnwantedFiles
 
 on:
-# GitHubのActionsタブから手動で実行できるようにする
+  # GitHubのActionsタブから手動で実行できるようにする
   workflow_dispatch:
-# masterブランチへのプッシュでも実行する
+  # masterブランチへのプッシュでも実行する
   push:
     branches:
       - master
