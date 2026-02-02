@@ -34,8 +34,8 @@ jobs:
           unset DIR_CONDITIONS[0]
           # ファイル条件を構築(最初の不要な -o を後で削除)
           NAME_CONDITIONS=()
-            for pattern in $UNWANTED_NAME_PATTERNS; do
-          NAME_CONDITIONS+=(-o -iname "$pattern")
+          for pattern in $UNWANTED_NAME_PATTERNS; do
+            NAME_CONDITIONS+=(-o -iname "$pattern")
           done
           unset NAME_CONDITIONS[0]
           
