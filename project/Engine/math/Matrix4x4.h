@@ -1,13 +1,11 @@
 #pragma once
+#include "Vector3.h"
 struct Matrix4x4
 {
 
 	float m[4][4];
 };
-struct Vector3
-{
-	float x, y, z;
-};
+
 
 namespace MatrixMath
 {

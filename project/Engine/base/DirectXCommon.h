@@ -12,6 +12,8 @@
 #include "externals/DirectXTex/DirectXTex.h"
 
 
+
+
 class DirectXCommon
 {
 public://メンバ関数
@@ -59,6 +61,13 @@ public://メンバ関数
 	void PreDraw();
 	/// --- 描画後処理 ---
 	void PostDraw();
+	//  GPUへ送信
+	void ExecuteCommandList();
+	// シグナル待機
+	void WaitForSignal();
+	// コマンドリストリセット
+	void ResetCommandList();
+
 
 	//// --- Getter ---
 	ID3D12Device* GetDevice() const
@@ -77,7 +86,7 @@ public://メンバ関数
 		// Compilerに仕様するProfile
 		const wchar_t* profile
 	);
-
+	
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource>CreateTextureResource(const DirectX::TexMetadata& metadata);
@@ -88,6 +97,8 @@ public://メンバ関数
 
 private:
 	WinApp* winApp = nullptr;
+
+	Microsoft::WRL::ComPtr<ID3D12Debug1> debugController = nullptr;
 
 	//Timer timer;
 
@@ -187,4 +198,7 @@ private:
 	//メンバ関数
 	//記録時間
 	std::chrono::steady_clock::time_point reference_;
+
+	// backBufferのインデックス
+	UINT backBufferIndex = 0;
 };
