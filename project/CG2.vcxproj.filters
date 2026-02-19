@@ -66,9 +66,6 @@
     <ClCompile Include="externals\imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="D3DResourceLeakChecker.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\io\Input.cpp">
       <Filter>Engine\io</Filter>
     </ClCompile>
@@ -87,14 +84,17 @@
     <ClCompile Include="Engine\math\Matrix4x4.cpp">
       <Filter>Engine\math</Filter>
     </ClCompile>
-    <ClCompile Include="Sprite.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="Engine\2d\Sprite.cpp">
+      <Filter>Engine\2d</Filter>
     </ClCompile>
-    <ClCompile Include="SpriteCommon.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="Engine\2d\SpriteCommon.cpp">
+      <Filter>Engine\2d</Filter>
     </ClCompile>
-    <ClCompile Include="TextureManager.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="Engine\2d\TextureManager.cpp">
+      <Filter>Engine\2d</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\base\D3DResourceLeakChecker.cpp">
+      <Filter>Engine\base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -126,9 +126,6 @@
     <ClInclude Include="externals\imgui\imstb_truetype.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="D3DResourceLeakChecker.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\io\Input.h">
       <Filter>Engine\io</Filter>
     </ClInclude>
@@ -156,14 +153,17 @@
     <ClInclude Include="Engine\math\Matrix4x4.h">
       <Filter>Engine\math</Filter>
     </ClInclude>
-    <ClInclude Include="Sprite.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="Engine\2d\Sprite.h">
+      <Filter>Engine\2d</Filter>
     </ClInclude>
-    <ClInclude Include="SpriteCommon.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="Engine\2d\SpriteCommon.h">
+      <Filter>Engine\2d</Filter>
     </ClInclude>
-    <ClInclude Include="TextureManager.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="Engine\2d\TextureManager.h">
+      <Filter>Engine\2d</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\base\D3DResourceLeakChecker.h">
+      <Filter>Engine\base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
