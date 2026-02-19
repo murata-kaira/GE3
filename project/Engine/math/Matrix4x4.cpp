@@ -152,17 +152,30 @@ Matrix4x4 MatrixMath::MakeIdentity4x4()
 // 平行移動行列
 Matrix4x4 MatrixMath::MakeTranslate(const Vector3& translate)
 {
-
 	Matrix4x4 result = {};
 	// 単位行列の作成
 	result.m[0][0] = 1.0f;
+	result.m[0][1] = 0.0f;
+	result.m[0][2] = 0.0f;
+	result.m[0][3] = 0.0f;
+
+	result.m[1][1] = 1.0f; result.m[1][0] = 0.0f;
 	result.m[1][1] = 1.0f;
+	result.m[1][2] = 0.0f;
+	result.m[1][3] = 0.0f;
+
 	result.m[2][2] = 1.0f;
+	result.m[2][0] = 0.0f;
+	result.m[2][1] = 0.0f;
+	result.m[2][2] = 1.0f;
+	result.m[2][3] = 0.0f;
+
 	result.m[3][3] = 1.0f;
 	// 平行移動の成分
 	result.m[3][0] = translate.x;
 	result.m[3][1] = translate.y;
 	result.m[3][2] = translate.z;
+	result.m[3][3] = 1.0f;
 
 	return result;
 }
@@ -173,8 +186,23 @@ Matrix4x4 MatrixMath::MakeScale(const Vector3& scale)
 	Matrix4x4 result = {};
 	// 拡大率の設定
 	result.m[0][0] = scale.x;
+	result.m[0][1] = 0.0f;
+	result.m[0][2] = 0.0f;
+	result.m[0][3] = 0.0f;
+
+	result.m[1][0] = 0.0f;
 	result.m[1][1] = scale.y;
+	result.m[1][2] = 0.0f;
+	result.m[1][3] = 0.0f;
+
+	result.m[2][0] = 0.0f;
+	result.m[2][1] = 0.0f;
 	result.m[2][2] = scale.z;
+	result.m[2][3] = 0.0f;
+
+	result.m[3][0] = 0.0f;
+	result.m[3][1] = 0.0f;
+	result.m[3][2] = 0.0f;
 	result.m[3][3] = 1.0f;
 
 	return result;// 拡大(スケ―リンク)行列を返す
@@ -187,11 +215,25 @@ Matrix4x4 MatrixMath::MakeRotateX(float radian)
 	Matrix4x4 result = {};
 	// 3次元のX軸周りの回転行列
 	result.m[0][0] = 1.0f;// X軸方向のベクトル変化しない
+	result.m[0][0] = 1.0f;
+	result.m[0][1] = 0.0f;
+	result.m[0][2] = 0.0f;
+	result.m[0][3] = 0.0f;
+
+	result.m[1][0] = 0.0f;
 	result.m[1][1] = std::cos(radian); // Y成分の回転
 	result.m[1][2] = std::sin(radian); // Z成分への影響
+	result.m[1][3] = 0.0f;
+
 	result.m[2][1] = -std::sin(radian);// Y成分への影響  
 	result.m[2][2] = std::cos(radian); // Z成分の回転
+	result.m[2][3] = 0.0f;
+
+	result.m[3][0] = 0.0f;
+	result.m[3][1] = 0.0f;
+	result.m[3][2] = 0.0f;
 	result.m[3][3] = 1.0f;// 同時系列のw成分(固定値1)
+
 
 	return result;// X軸の回転行列を返す
 }
@@ -247,6 +289,7 @@ Matrix4x4 MatrixMath::MakeAffine(const Vector3& scale, const Vector3& rotate, co
 
 	// 最終的なアフィン変換行列： T * R * S
 	result = Multipty(Multipty(scaleMatrix, rotateXYZMatrix), translateMatrix);
+
 
 	return result;
 }

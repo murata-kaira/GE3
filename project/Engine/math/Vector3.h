@@ -5,3 +5,5 @@ struct Vector3 final
 	float y;
 	float z;
 };
+
+Vector3 Normalize(const Vector3& v);

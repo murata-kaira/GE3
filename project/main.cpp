@@ -18,8 +18,7 @@
 #include <strsafe.h>
 #include <wrl.h>
 #include <xaudio2.h>
-#define DIRECTINPUT_VERSION   0x0800 
-#include <dinput.h>
+
 #include "Engine/io/Input.h"
 #include "Engine/base/WinApp.h"
 #include "Engine/base/DirectXCommon.h"
@@ -28,25 +27,13 @@
 #include "Vector2.h"
 #include "Vector3.h"
 #include "Vector4.h"
-#include <dbghelp.h>
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-
-#pragma comment(lib,"d3d12.lib")
-#pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"Dbghelp.lib")
-#pragma comment(lib,"dxguid.lib")
-#pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib,"xaudio2.lib")
-#pragma comment(lib,"dinput8.lib")
-#pragma comment(lib,"dxguid.lib") 
 
-#include<fstream>
-#include<sstream>
 #include <minidumpapiset.h>
-#include <xaudio2.h>
 #include <SpriteCommon.h>
 #include <Sprite.h>
 #include <TextureManager.h>
@@ -171,140 +158,6 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 }
 
 #pragma endregion
-
-Vector3 Normalize(const Vector3& v)
-{
-	float length = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-	if (length == 0.0f)
-		return { 0.0f, 0.0f, 0.0f };
-	return { v.x / length, v.y / length, v.z / length };
-}
-
-Matrix4x4 MakeScaleMatrix(const Vector3& scale)
-{
-	Matrix4x4 result = {};
-
-	result.m[0][0] = scale.x;
-	result.m[0][1] = 0.0f;
-	result.m[0][2] = 0.0f;
-	result.m[0][3] = 0.0f;
-
-	result.m[1][0] = 0.0f;
-	result.m[1][1] = scale.y;
-	result.m[1][2] = 0.0f;
-	result.m[1][3] = 0.0f;
-
-	result.m[2][0] = 0.0f;
-	result.m[2][1] = 0.0f;
-	result.m[2][2] = scale.z;
-	result.m[2][3] = 0.0f;
-
-	result.m[3][0] = 0.0f;
-	result.m[3][1] = 0.0f;
-	result.m[3][2] = 0.0f;
-	result.m[3][3] = 1.0f;
-	return result;
-}
-
-Matrix4x4 MakeRotateXMatrix(float radian)
-{
-	Matrix4x4 result = {};
-
-	result.m[0][0] = 1.0f;
-	result.m[0][1] = 0.0f;
-	result.m[0][2] = 0.0f;
-	result.m[0][3] = 0.0f;
-
-	result.m[1][0] = 0.0f;
-	result.m[1][1] = std::cos(radian);
-	result.m[1][2] = std::sin(radian);
-	result.m[1][3] = 0.0f;
-
-	result.m[2][0] = 0.0f;
-	result.m[2][1] = -std::sin(radian);
-	result.m[2][2] = std::cos(radian);
-	result.m[2][3] = 0.0f;
-
-	result.m[3][0] = 0.0f;
-	result.m[3][1] = 0.0f;
-	result.m[3][2] = 0.0f;
-	result.m[3][3] = 1.0f;
-
-	return result;
-}
-
-Matrix4x4 MakeTranslateMatrix(const Vector3& translate)
-{
-	Matrix4x4 result = {};
-
-	result.m[0][0] = 1.0f;
-	result.m[0][1] = 0.0f;
-	result.m[0][2] = 0.0f;
-	result.m[0][3] = 0.0f;
-
-	result.m[1][0] = 0.0f;
-	result.m[1][1] = 1.0f;
-	result.m[1][2] = 0.0f;
-	result.m[1][3] = 0.0f;
-
-	result.m[2][0] = 0.0f;
-	result.m[2][1] = 0.0f;
-	result.m[2][2] = 1.0f;
-	result.m[2][3] = 0.0f;
-
-	result.m[3][0] = translate.x;
-	result.m[3][1] = translate.y;
-	result.m[3][2] = translate.z;
-	result.m[3][3] = 1.0f;
-	return result;
-}
-
-
-#pragma region 
-
-std::wstring ConvertString(const std::string& str)
-{
-	if (str.empty())
-	{
-		return std::wstring();
-	}
-
-	auto sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(&str[0]), static_cast<int>(str.size()), NULL, 0);
-	if (sizeNeeded == 0)
-	{
-		return std::wstring();
-	}
-	std::wstring result(sizeNeeded, 0);
-	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(&str[0]), static_cast<int>(str.size()), &result[0], sizeNeeded);
-	return result;
-}
-
-
-
-std::string ConvertString(const std::wstring& str)
-{
-	if (str.empty())
-	{
-		return std::string();
-	}
-
-	auto sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
-	if (sizeNeeded == 0)
-	{
-		return std::string();
-	}
-	std::string result(sizeNeeded, 0);
-	WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), result.data(), sizeNeeded, NULL, NULL);
-	return result;
-}
-
-
-
-
-
-
-#pragma endregion
-
 
 #pragma region 
 
@@ -1276,9 +1129,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 
 #pragma region UVTransform
-		Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
-		uvTransformMatrix = Multipty(uvTransformMatrix, MakeRotateXMatrix(uvTransformSprite.rotate.z));
-		uvTransformMatrix = Multipty(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
+		Matrix4x4 uvTransformMatrix =MakeScale(uvTransformSprite.scale);
+		uvTransformMatrix = Multipty(uvTransformMatrix, MakeRotateX(uvTransformSprite.rotate.z));
+		uvTransformMatrix = Multipty(uvTransformMatrix, MakeTranslate(uvTransformSprite.translate));
 		materialSpriteData->uvTransform = uvTransformMatrix;
 
 #pragma endregion
