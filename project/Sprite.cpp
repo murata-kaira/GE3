@@ -1,36 +1,135 @@
 #include "Sprite.h"
 #include <SpriteCommon.h>
+#include <TextureManager.h>
 using namespace MatrixMath;
 
 
 
-void Sprite::Initialize(SpriteCommon* spriteCommon)
-{
+void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
+	{
 	this->spriteCommon = spriteCommon;
 
 
+	CreateVertexData();
 
-	DirectX::ScratchImage mipImages = spriteCommon->GetDxCommon()->LoadTexture("resources/uvChecker.png");
+	CreateMaterialData();
 
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	CreateTransformationMatrixData();
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	srvDesc.Format = metadata.format;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;//2Dテクスチャー
-	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
-
-	textureResource = spriteCommon->GetDxCommon()->CreateTextureResource(metadata).Get();
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermadiaiteResource = spriteCommon->GetDxCommon()->UploadTextureData(textureResource, mipImages);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = spriteCommon->GetDxCommon()->GetSRVCPUDescriptorHandle(1);
-
-	textureSrvHandleGPU = spriteCommon->GetDxCommon()->GetSRVGPUDescriptorHandle(1);
-
-	//SRVを生成
-	spriteCommon->GetDxCommon()->GetDevice()->CreateShaderResourceView(textureResource.Get(), &srvDesc, textureSrvHandleCPU);
+	TextureManager::GetInstance()->LoadTexture(textureFilePath);
 
 
+	//単位行列を書き込んでおく
+	textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+
+	AdjustTextureSize();
+}
+
+
+void Sprite::Update()
+{
+
+	transform.translate = { position.x, position.y, 0.0f }; //座標
+	transform.rotate = { 0.0f, 0.0f, rotation }; //回転
+	transform.scale = { size.x, size.y, 1.0f }; //サイズ
+
+	float left = 0.0f - anchorPoint.x;
+	float right = 1.0f - anchorPoint.x;
+	float top = 0.0f - anchorPoint.y;
+	float bottom = 1.0f - anchorPoint.y;
+
+
+	//左右反転
+	if (isFlipX_)
+	{
+		left = -left;
+		right = -right;
+	}
+
+	//上下反転
+	if (isFlipY_)
+	{
+		top = -top;
+		bottom = -bottom;
+	}
+
+
+	const DirectX::TexMetadata& metadata = TextureManager::GetInstance()->GetMetaData(textureIndex);
+	float tex_Left = textureLeftTop.x / metadata.width;
+	float tex_right = (textureLeftTop.x + textureSize.x) / metadata.width;
+	float tex_top = textureLeftTop.y / metadata.height;
+	float tex_bottom = (textureLeftTop.y + textureSize.y) / metadata.height;
+
+
+
+
+	
+	// 左下
+	vertexDataPtr[0].position = { left,bottom,0.0f,1.0f };
+	vertexDataPtr[0].texcoord = { tex_Left,tex_bottom };
+	vertexDataPtr[0].normal = { 0.0f,0.0f,-1.0f };
+
+	//左上
+	vertexDataPtr[1].position = { left,top,0.0f,1.0f };
+	vertexDataPtr[1].texcoord = { tex_Left,tex_top };
+	vertexDataPtr[1].normal = { 0.0f,0.0f,-1.0f };
+
+	//右下
+	vertexDataPtr[2].position = { right,bottom,0.0f,1.0f };
+	vertexDataPtr[2].texcoord = { tex_right,tex_bottom };
+	vertexDataPtr[2].normal = { 0.0f,0.0f,-1.0f };
+
+	//右上
+	vertexDataPtr[3].position = { right,top,0.0f,1.0f };
+	vertexDataPtr[3].texcoord = { tex_right,tex_top };
+	vertexDataPtr[3].normal = { 0.0f,0.0f,-1.0f };
+
+
+	indexDataPtr[0] = 0; indexDataPtr[1] = 1; indexDataPtr[2] = 2;
+	indexDataPtr[3] = 1;	indexDataPtr[4] = 3; indexDataPtr[5] = 2;
+
+	
+	Matrix4x4 worldMatrix = MakeAffine(transform.scale, transform.rotate, transform.translate);
+	Matrix4x4 viewMatrixSprite = MatrixMath::MakeIdentity4x4();
+	Matrix4x4 projectionMatrixSprite = Orthographic(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrixSprite = Multipty(worldMatrix, Multipty(viewMatrixSprite, projectionMatrixSprite));
+
+	transform.translate = { position.x,position.y,0.0f };
+	transform.rotate = { 0.0f,0.0f,rotation };
+	transformationMatrixDataPtr->WVP = worldViewProjectionMatrixSprite;
+	transformationMatrixDataPtr->World = worldMatrix;
+	transform.rotate = { 0.0f,0.0f,rotation };
+	transform.scale = { size.x,size.y,1.0f };
+
+	
+}
+
+void Sprite::Draw()
+{
+
+	// Spriteの描画
+	spriteCommon->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+	spriteCommon->GetDxCommon()->GetCommandList()->IASetIndexBuffer(&indexBufferView);//IBVを設定
+
+	// マテリアルCBuffer
+	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
+
+	// SRVのDescriptorTableの先頭を設定
+	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex));
+
+	spriteCommon->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
+
+
+}
+
+DirectX::ScratchImage Sprite::LoadTexture(const std::string& filePath)
+{
+	return DirectX::ScratchImage();
+}
+
+void Sprite::CreateVertexData()
+{	
 	//頂点リソースを作る
 	vertexResource = spriteCommon->GetDxCommon()->CreateBufferResource(sizeof(VertexData) * 4);
 
@@ -48,83 +147,38 @@ void Sprite::Initialize(SpriteCommon* spriteCommon)
 
 	//頂点リソース
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataPtr));
-
-
-	// 左下
-	vertexDataPtr[0].position = { 0.0f,360.0f,0.0f,1.0f };
-	vertexDataPtr[0].texcoord = { 0.0f,1.0f };
-	vertexDataPtr[0].normal = { 0.0f,0.0f,-1.0f };
-
-	//左上
-	vertexDataPtr[1].position = { 0.0f,0.0f,0.0f,1.0f };
-	vertexDataPtr[1].texcoord = { 0.0f,0.0f };
-	vertexDataPtr[1].normal = { 0.0f,0.0f,-1.0f };
-
-	//右下
-	vertexDataPtr[2].position = { 640.0f,360.0f,0.0f,1.0f };
-	vertexDataPtr[2].texcoord = { 1.0f,1.0f };
-	vertexDataPtr[2].normal = { 0.0f,0.0f,-1.0f };
-
-	//右上
-	vertexDataPtr[3].position = { 640.0f,0.0f,0.0f,1.0f };
-	vertexDataPtr[3].texcoord = { 1.0f,0.0f };
-	vertexDataPtr[3].normal = { 0.0f,0.0f,-1.0f };
-
 	indexResource->Map(0, nullptr, reinterpret_cast<void**>(&indexDataPtr));
-	indexDataPtr[0] = 0; indexDataPtr[1] = 1; indexDataPtr[2] = 2;
-	indexDataPtr[3] = 1;	indexDataPtr[4] = 3; indexDataPtr[5] = 2;
+}
 
+void Sprite::CreateMaterialData()
+{
 	materialResource = spriteCommon->GetDxCommon()->CreateBufferResource(sizeof(Material));
-
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialDataPtr));
 	materialDataPtr->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialDataPtr->enableLighting = true;
 	materialDataPtr->uvTransform = MatrixMath::MakeIdentity4x4();
+}
 
+void Sprite::CreateTransformationMatrixData()
+{
 	transformationMatrixResource = spriteCommon->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
 
 	// 書き込むためのアドレスを取得
 	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataPtr));
 
-	transform.scale = Vector3(1.0f, 1.0f, 1.0f);
-	Update();
+	transformationMatrixDataPtr->WVP = MakeIdentity4x4();
+	transformationMatrixDataPtr->World = MakeIdentity4x4();
 }
 
-void Sprite::Update()
-{
-	Matrix4x4 worldMatrix = MakeAffine(transform.scale, transform.rotate, transform.translate);
-	Matrix4x4 viewMatrixSprite = MatrixMath::MakeIdentity4x4();
-	Matrix4x4 projectionMatrixSprite = Orthographic(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrixSprite = Multipty(worldMatrix, Multipty(viewMatrixSprite, projectionMatrixSprite));
-
-	transformationMatrixDataPtr->WVP = worldViewProjectionMatrixSprite;
-	transformationMatrixDataPtr->World = worldMatrix;
-}
-
-void Sprite::Draw()
+void Sprite::AdjustTextureSize()
 {
 
-
-
-	// Spriteの描画
-	spriteCommon->GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
-	spriteCommon->GetDxCommon()->GetCommandList()->IASetIndexBuffer(&indexBufferView);//IBVを設定
-
-
-	// マテリアルCBuffer
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
-
-	spriteCommon->GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-
-
-
-	spriteCommon->GetDxCommon()->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
-
+	//テクスチャメタデータを取得
+	const DirectX::TexMetadata& metadata = TextureManager::GetInstance()->GetMetaData(textureIndex);
+	textureSize.x = static_cast<float>(metadata.width);
+	textureSize.y = static_cast<float>(metadata.height);
+	//画像サイズをテクスチャサイズに合わせる
+	size = textureSize;
 
 }
 
-DirectX::ScratchImage Sprite::LoadTexture(const std::string& filePath)
-{
-	return DirectX::ScratchImage();
-}

@@ -49,6 +49,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include <xaudio2.h>
 #include <SpriteCommon.h>
 #include <Sprite.h>
+#include <TextureManager.h>
 using namespace MatrixMath;
 #pragma region 
 
@@ -543,19 +544,43 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	dxCommon->Initialize(winApp);
 
+	//テクスチャマネージャーの初期化
+	TextureManager::GetInstance()->Initialize(dxCommon);
+
 
 	SpriteCommon* spriteCommon = nullptr;
 	//スプライト共通部の初期化
 	spriteCommon = new SpriteCommon();
 	spriteCommon->Initialize(dxCommon);
 
-	Sprite* sprite = new Sprite();
-	sprite->Initialize(spriteCommon);
-
+	
 
 
 	//音声読み込み
-	SoundData soundData1 = SoundLoadWave("resources/fanfare.wav");
+	SoundData soundData1 = SoundLoadWave("Resources/fanfare.wav");
+
+	std::vector<std::string> textures = {
+	"Resources/uvChecker.png",
+	"Resources/monsterball.png"
+	};
+
+	for(const std::string& texPath : textures)
+	{
+		TextureManager::GetInstance()->LoadTexture(texPath);
+	}
+
+
+	std::vector<Sprite*> sprites;
+	for (uint32_t i = 0; i < 5; ++i)
+	{
+		Sprite* sprite = new Sprite();
+		std::string& textureFile = textures[i % 2];
+		sprite->Initialize(spriteCommon, textureFile);
+		sprite->SetSize({ 64.0f,64.0f });
+		sprite->SetPosition({ 100.0f + i * 200.0f,100.0f });
+		sprites.push_back(sprite);
+	}
+
 
 
 	HRESULT result = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
@@ -1100,6 +1125,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	input = new Input();
 	input->Initialize(winApp);
 
+
+
 #pragma endregion
 
 	// Transform変数を作る
@@ -1123,6 +1150,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	while (true)
 	{
+
+		//座標の移動
+	/*
+	Vector2 position = sprite->GetPosition();
+		position.x += 0.5f;
+		sprite->SetPosition(position);
+		*/
+
+		//回転する
+		/*
+		float rotation = sprite->GetRotation();
+		rotation += 0.01f;
+		sprite->SetRotation(rotation);
+		*/
+
+		//色を変える
+		/*
+		Vector4 color = sprite->GetColor();
+		color.x += 0.01f;
+		if (color.x > 1.0f)
+		{
+			color.x -= 1.0f;
+		}
+		sprite->SetColor(color);
+		*/
+
+		//サイズを変える
+		/*
+		Vector2 size = sprite->GetSize();
+		size.x += 0.1f;
+		size.y += 0.1f;
+		sprite->SetSize(size);
+		*/
 
 
 		if (winApp->ProcessMessage())
@@ -1204,7 +1264,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			OutputDebugStringA("Hit 0\n");//出力ウィンドウに「Hit 0」と表示
 			transformSprite.translate.x += 5.0f;
 		}
-		sprite->Update();
+
+
+
+		for (auto* sprite : sprites)
+		{
+			sprite->Update();
+		}
+
+
+
 
 #pragma region UVTransform
 		Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
@@ -1223,8 +1292,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//Sprite描画準備。Spriteの描画に共通のグラフィックスコマンドを頼む
 		spriteCommon->SpriteDeCommon();
 
-		sprite->Draw();
 
+		for (auto* sprite : sprites)
+		{
+			sprite->Draw();
+		}
 
 		// rootSignatrueを設定。PSOに設定してるけど別途設定が必要
 		dxCommon->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
@@ -1242,7 +1314,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		dxCommon->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 
-		dxCommon->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+		//dxCommon->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 #pragma endregion
 
 
@@ -1255,6 +1327,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommandList());
 		// 描画後処理
 		dxCommon->PostDraw();
+
+		TextureManager::GetInstance()->ReleaseIntermediateResources();
+
 	}
 
 	// ImGuiの終了処理
@@ -1277,6 +1352,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//音声データ解放
 	SoundUnload(&soundData1);
 
+	// テクスチャマネージャの終了
+	TextureManager::GetInstance()->Finalize();
+
 
 	//DirectX解放
 	delete dxCommon;
@@ -1286,7 +1364,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	delete winApp;
 
 	delete spriteCommon;
-	delete sprite;
+
+
+	for (auto* sprite : sprites)
+	{
+		delete sprite;
+	}
+	sprites.clear();
 
 	//WindowsAPI解放
 	winApp = nullptr;
