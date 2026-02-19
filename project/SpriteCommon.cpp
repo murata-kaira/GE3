@@ -175,6 +175,10 @@ void SpriteCommon::GraphicsPipeline()
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&graphicsPipelineState)
 	);
+
+	//カリングしない(裏面も表示させる)
+	rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+
 	assert(SUCCEEDED(hr));
 
 }
